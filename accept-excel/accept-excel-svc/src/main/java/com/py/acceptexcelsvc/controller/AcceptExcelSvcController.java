@@ -2,13 +2,15 @@ package com.py.acceptexcelsvc.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.py.acceptexcelsvc.service.ExcelProcessing;
-
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
+	
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.MediaType;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,9 +29,10 @@ public class AcceptExcelSvcController {
     }
     
     @PostMapping("/file/")
-    public String acceptFile(@RequestParam("file") MultipartFile file) {
+    public Response acceptFile(@RequestParam("file") MultipartFile file) {
     	String content=null,contentType=file.getContentType();
-    	System.out.println("file type::: "+file.getContentType());
+//    	System.out.println("file type::: "+file.getContentType());
+    	String responseMsg="default Return";
     	if(contentType.equals("text/plain")) {
 	    	try {
 	    			content =new String(file.getInputStream().readAllBytes());    			
@@ -38,17 +41,19 @@ public class AcceptExcelSvcController {
 				System.err.println("trying to extract contents from a file::" +e);
 //				e.printStackTrace();
 			}
-	    	return "file Accepted"+file.getOriginalFilename()+" with content=> "+content;
+	    	responseMsg= "file Accepted"+file.getOriginalFilename()+" with content=> "+content;
     	}else if(contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
     		try {
 				excelProcessing.processExcel(file.getInputStream());
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				System.err.println("trying to process an excel:: "+e);
+//				System.err.println("trying to process an excel:: "+e);
 //				e.printStackTrace();
 			}
-    		return "excel reading success";
+    		responseMsg= "excel reading success";
     	}
-    	return "default Return";
+//    	new ResponseBuilder();
+    	String responseObj[] = {responseMsg,"Helloworld"};
+    	return Response.status(Status.OK).entity(responseObj).build();
     }
 }
