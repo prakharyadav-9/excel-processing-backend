@@ -33,27 +33,26 @@ public class AcceptExcelSvcController {
     	String content=null,contentType=file.getContentType();
 //    	System.out.println("file type::: "+file.getContentType());
     	String responseMsg="default Return";
+    	Response response=null;
     	if(contentType.equals("text/plain")) {
 	    	try {
-	    			content =new String(file.getInputStream().readAllBytes());    			
+	    			content =new String(file.getInputStream().readAllBytes());
+	    			System.out.println(content);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				System.err.println("trying to extract contents from a file::" +e);
 //				e.printStackTrace();
 			}
 	    	responseMsg= "file Accepted"+file.getOriginalFilename()+" with content=> "+content;
     	}else if(contentType.equals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
     		try {
-				excelProcessing.processExcel(file.getInputStream());
+				response = excelProcessing.processExcel(file.getInputStream());
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-//				System.err.println("trying to process an excel:: "+e);
+				System.err.println("trying to process an excel:: "+e);
 //				e.printStackTrace();
 			}
     		responseMsg= "excel reading success";
     	}
 //    	new ResponseBuilder();
-    	String responseObj[] = {responseMsg,"Helloworld"};
-    	return Response.status(Status.OK).entity(responseObj).build();
+    	return response;
     }
 }

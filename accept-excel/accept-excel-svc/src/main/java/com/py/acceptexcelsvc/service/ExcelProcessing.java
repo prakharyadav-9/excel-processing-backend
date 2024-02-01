@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.regex.Matcher;
 
-import org.apache.catalina.connector.Response;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
+import javax.ws.rs.core.Response.Status;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.poi.EncryptedDocumentException;
@@ -28,36 +32,97 @@ public class ExcelProcessing {
 		return null;	
 	}
 	
-	public Response processExcel(InputStream file) {
+	public javax.ws.rs.core.Response processExcel(InputStream file) {
 		logger.info("Processing the excel file:",file);
 //		System.out.println("read the file in inputStream "+file);
 //		System.out.println("is Empty file :: "+file.);
-		Map<String,String> headerMap=new HashMap<>();
+		ArrayList<String> headersTypes=new ArrayList<>();
+		ArrayList<Row> afftecedRows = new ArrayList<>();
+		Response response = Response.status(Status.BAD_REQUEST).build();
 		try(Workbook wb = new XSSFWorkbook(file);){
-			prepareHeader(wb,headerMap); // printing the input workSheet into console
+			prepareHeader(wb,headersTypes); // prepare all the headers types 
+			afftecedRows= parseExcelDataRows(wb,headersTypes);
+			response = Response.status(Status.OK).build();
 			
 		} catch (EncryptedDocumentException e) {
-			// TODO Auto-generated catch block
 			System.err.println("cannot process the document "+e);
 //			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			System.err.println("IOException occured for parsing the file "+e);
 //			e.printStackTrace();
 		}
-		return null;
+		return response;
 	}
 	
-	private void prepareHeader(Workbook wb,Map<String,String> headerMap) {
+	private ArrayList<Row> parseExcelDataRows(Workbook wb, ArrayList<String> headersTypes) {
+		ArrayList<Row> affectedRows=new ArrayList<>();
+		for(Sheet sheet:wb) {
+			int item=-1;
+			for(Row row:sheet) {
+				boolean isAfftected = false;
+				item++;
+				if(0==item) {
+					continue; // leaving the header row
+				}
+				int cellColIdx=0;
+				for(Cell cell:row) {
+					String cellTy = headersTypes.get(cellColIdx);
+					String regex = Constants.ColTypeRegex.get(cellTy);
+					CellType cellType = cell.getCellType();
+					System.out.println("should have been "+cellTy+" but got "+cellType.toString());
+					switch(cellType) {
+					default:
+						logger.error("could not determine cell types from the know type of {} row and {} column in {} sheet",item,cellColIdx,sheet);
+					break;
+					
+					case NUMERIC:
+						if(cellTy.equalsIgnoreCase(cellType.toString())) {
+							// processing only numeric
+							System.out.println("dealing with numeric ");
+						}else {
+							// failed numeric parse
+//							need to add to affected row
+							affectedRows.add(row);
+							isAfftected=true;
+						}
+					break;
+					
+					case STRING:
+						String cellValue = cell.getStringCellValue().trim();
+						Matcher matched = Constants.CompiledPatterns.get(regex).matcher(cellValue);
+						if(!matched.matches()) {
+							affectedRows.add(row);
+							isAfftected=true;
+						}else{
+							// for successfull string match
+						}
+					break;
+					
+					case BLANK:
+						isAfftected=true;
+						affectedRows.add(row);
+					break;
+					}
+					if(isAfftected) {
+						// breaking the row checking
+						break;
+					}
+					cellColIdx++; // incrementing to next column
+				}
+			}
+		}
+		logger.info("parsing complete with {} affected rows",affectedRows.size());
+		return affectedRows;
+	}
+
+	private void prepareHeader(Workbook wb,ArrayList<String> headersType) {
 		int numerOfSheets = wb.getNumberOfSheets();
 		for(int i=0;i<numerOfSheets;i++) {
 			Sheet sheet = wb.getSheetAt(i);
-			Row headerRow = sheet.getRow(0);
-			for(Cell cell: headerRow) {
-				Utils.grabCellFilterValue(cell, Constants.HeaderLableRegex, Constants.DataTypeRegex, headerMap);
-			}
+			Row headerRow = sheet.getRow(0); // passing only the header to get datatypes
+			Utils.grabCellFilterValue(headerRow, Constants.HeaderLableRegex, Constants.DataTypeRegex, headersType);
 		}
-		System.out.println(headerMap);
+		System.out.println(headersType);
 	}
 
 	private void readExcelToConsole(Workbook workbook) {
