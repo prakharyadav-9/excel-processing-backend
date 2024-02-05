@@ -9,6 +9,8 @@ import java.util.regex.Pattern;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.CellType;
 import org.springframework.http.ResponseEntity;
 
@@ -73,4 +75,38 @@ public final class Utils {
 	    		}
 	    	}
 	    }
+	    
+	    private void readExcelToConsole(Workbook workbook) {
+			// Iterate through all sheets
+	        for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+	            Sheet sheet = workbook.getSheetAt(sheetIndex);
+
+	            // Iterate through all rows in the sheet
+	            for (Row row : sheet) {
+	                // Iterate through all cells in the row
+	                for (Cell cell : row) {
+	                    // Get the value from the cell
+	                    CellType cellType = cell.getCellType();
+	                    switch (cellType) {
+	                        case STRING:
+	                            System.out.print(cell.getStringCellValue() + "\t");
+	                            break;
+	                        case NUMERIC:
+	                            System.out.print(cell.getNumericCellValue() + "\t");
+	                            break;
+	                        case BOOLEAN:
+	                            System.out.print(cell.getBooleanCellValue() + "\t");
+	                            break;
+	                        case BLANK:
+	                            System.out.print("[BLANK]\t");
+	                            break;
+	                        // Handle other cell types as needed
+	                        default:
+	                            System.out.print("[UNKNOWN]\t");
+	                    }
+	                }
+	                System.out.println(); // Move to the next line after each row
+	            }
+	        }
+		}
 }

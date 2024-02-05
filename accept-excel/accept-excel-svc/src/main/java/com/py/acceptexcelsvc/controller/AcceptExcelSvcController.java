@@ -13,6 +13,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.MediaType;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -29,11 +30,11 @@ public class AcceptExcelSvcController {
     }
     
     @PostMapping("/file/")
-    public Response acceptFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<byte[]> acceptFile(@RequestParam("file") MultipartFile file) {
     	String content=null,contentType=file.getContentType();
 //    	System.out.println("file type::: "+file.getContentType());
     	String responseMsg="default Return";
-    	Response response=null;
+    	ResponseEntity<byte[]> response=null;
     	if(contentType.equals("text/plain")) {
 	    	try {
 	    			content =new String(file.getInputStream().readAllBytes());
