@@ -34,7 +34,6 @@ import com.py.acceptexcelsvc.entity.ParsedCSVRows;
 import com.py.acceptexcelsvc.util.Utils;
 
 @Service
-//@SingleTon
 public class ExcelProcessing {
 	
 	private static final Logger logger = LogManager.getLogger(ExcelProcessing.class);
